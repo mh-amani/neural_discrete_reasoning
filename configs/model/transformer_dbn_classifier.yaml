@@ -1,0 +1,45 @@
+_target_: src.models.transformer_dbn_classifier.TransformerDBNClassifier
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.0
+
+scheduler:
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  _partial_: true
+  mode: min
+  factor: 0.1
+  patience: 10
+
+####################################################
+# compile model for faster training with pytorch 2.0
+compile: false
+embedding_dim: 256
+dbn_after_each_layer: True
+num_transformer_layers: 3
+
+discrete_layer: 
+  _target_: src.models.components.discrete_layers.vqvae.VQVAEDiscreteLayer
+  key: 'vqvae'
+  temperature: 1.0
+  label_smoothing_scale: 0.0
+  dist_ord: 2
+  dictionary_dim: ${model.params.embedding_dim}
+  hard: True
+  projection_method: "layer norm" # "unit-sphere" "scale" "layer norm" or "None"
+  beta: 0.25
+
+transformer_layer:
+  _target_: src.models.components.transformer.TransformerLayer
+  num_heads: 8
+  dim_feedforward: ${model.params.embedding_dim}
+  dropout: 0.1
+  activation: "relu"
+  dim: ${model.params.embedding_dim}
+  norm: "layer_norm"
+  batch_first: True
+
+
+    

@@ -21,7 +21,7 @@ git clone https://github.com/mh-amani/neural_discrete_reasoning
 cd neural_discrete_reasoning
 
 # [OPTIONAL] create conda environment
-conda create -n myenv python=3.11
+conda create -n ndr python=3.11
 conda activate ndr
 
 # install pytorch according to instructions
