@@ -1,5 +1,7 @@
 _target_: src.models.transformer_dbn_classifier.TransformerDBNClassifier
 
+key: "transformer_dbn_classifier"
+
 optimizer:
   _target_: torch.optim.Adam
   _partial_: true
@@ -27,7 +29,7 @@ discrete_layer:
   temperature: 1.0
   label_smoothing_scale: 0.0
   dist_ord: 2
-  dictionary_dim: ${model.params.embedding_dim}
+  dictionary_dim: ${model.embedding_dim}
   hard: True
   projection_method: "layer norm" # "unit-sphere" "scale" "layer norm" or "None"
   beta: 0.25
@@ -35,10 +37,10 @@ discrete_layer:
 transformer_layer:
   _target_: src.models.components.transformer.TransformerLayer
   num_heads: 8
-  dim_feedforward: ${model.params.embedding_dim}
+  dim_feedforward: ${model.embedding_dim}
   dropout: 0.1
   activation: "relu"
-  dim: ${model.params.embedding_dim}
+  dim: ${model.embedding_dim}
   norm: "layer_norm"
   batch_first: True
 

@@ -1,23 +1,22 @@
-name: "pvr"
-run_name: "${model_key}-${discretizer_key}" 
-
 # @package _global_
 
 # to execute this experiment run:
 # python train.py experiment=example
 
 defaults:
-  - override /data: mnist
-  - override /model: mnist
+  - override /data: pvr
+  - override /model: transformer_dbn_classifier
   - override /callbacks: default
   - override /trainer: default
 
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
+name: "pvr"
+run_name: "${model.key}-${model.discrete_layer.key}" 
 
-tags: ["mnist", "simple_dense_net"]
+tags: []
 
-seed: 12345
+seed: 42
 
 trainer:
   min_epochs: 10
