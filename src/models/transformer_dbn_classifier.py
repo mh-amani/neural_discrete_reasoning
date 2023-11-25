@@ -47,31 +47,6 @@ class TransformerDBNClassifier(LightningModule):
         # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
-
-    def __init_model(self):
-        self.model = nn.Sequential()
-        for _ in range(self.hparams.depth):
-            transformer_layer = hydra.utils.instantiate(self.hparams.transformer_layer)
-            self.model.add_module(transformer_layer)
-            if self.hparams.discrete_layer is not None:
-                discrete_layer = hydra.utils.instantiate(self.hparams.discrete_layer)
-                self.model.add_module(discrete_layer)
-        
-
-        self.model = nn.Sequential()
-        # Add embedding layer
-        self.embedding = nn.Embedding(hparams.num_embeddings, hparams.embedding_dim)
-
-        for i in range(hparams.depth):
-            transformer_layer = hydra.utils.instantiate(self.hparams.transformer_layer)
-            self.model.add_module(transformer_layer)
-
-            if self.hparams.dbn_after_each_layer is not None or i == hparams.depth - 1:
-                discrete_layer = hydra.utils.instantiate(hparams.discrete_layer)
-                if self.hparam.shared_embedding_dbn:
-                    discrete_layer.dictionary = self.embedding
-                self.model.add_module(discrete_layer)
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
 

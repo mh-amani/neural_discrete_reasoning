@@ -93,31 +93,53 @@ class TransformerDBN(nn.Module):
     def __init__(self, hparams):
         super().__init__()
         self.hparams = hparams
+        # Add embedding layer
         self.token_embedding = nn.Embedding(self.hparams.num_embedding, embedding_dim=self.hparams.embedding_dim)
         self.pos_embedding = nn.Parameter(torch.randn(1, seq_len + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
-        self.albert = albert
+        
         self.layers = nn.ModuleList([])
 
         for i in range(hparams.depth):
-            self.layers.append()
-    
-
-
-        self.model = nn.Sequential()
-        # Add embedding layer
-        self.embedding = nn.Embedding(hparams.num_embeddings, hparams.embedding_dim)
-
-        
             transformer_layer = hydra.utils.instantiate(self.hparams.transformer_layer)
-            self.model.add_module(transformer_layer)
+            self.layers.append(transformer_layer)
 
             if self.hparams.dbn_after_each_layer is not None or i == hparams.depth - 1:
-                discrete_layer = hydra.utils.instantiate(hparams.discrete_layer)
+                discrete_layer = hydra.utils.instantiate(self.hparams.discrete_layer)
                 if self.hparam.shared_embedding_dbn:
-                    discrete_layer.dictionary = self.embedding
-                self.model.add_module(discrete_layer)
+                    discrete_layer.dictionary = self.token_embedding
+                self.layers.append(discrete_layer)
+        
+        self.pool = pool
+        self.to_latent = nn.Identity()
+
+        self.mlp_head = nn.Sequential(
+            nn.LayerNorm(self.hparams.embedding_dim),
+            nn.Linear(self.hparams.embedding_dim, self.hparams.output_dim)
+        )
+
+    def forward(self, inputs):
+        inputs = inputs.int()
+        x = self.token_embedding(inputs)
+        b, n, _ = x.shape
+
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x += self.pos_embedding[:, :(n + 1)]
+        x = self.dropout(x)
+
+        for layer in self.layers:
+            if isinstance(layer, AbstractDiscreteLayer):
+                x = layer(x, supervision=supervision)
+            else:
+                x = layer(x) + x
+
+        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+
+        x = self.to_latent(x)
+        return self.mlp_head(x)
+
 
 class TokenTransformer(nn.Module):
     def __init__(self, *, seq_len, output_dim, dim, depth, heads, mlp_dim, pool='cls', 
