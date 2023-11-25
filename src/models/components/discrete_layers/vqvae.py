@@ -2,11 +2,11 @@ from .abstract_discrete_layer import AbstractDiscreteLayer
 import torch
 from torch import nn
 # from vector_quantize_pytorch import VectorQuantize
-from entmax import sparsemax
+
 
 class VQVAEDiscreteLayer(AbstractDiscreteLayer):
-    def __init__(self, dims, **kwargs) -> None:
-        super().__init__(dims, **kwargs)      
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)      
         
         self.projection_method = kwargs.get("projection_method",None)
         
@@ -18,21 +18,6 @@ class VQVAEDiscreteLayer(AbstractDiscreteLayer):
         self.hard = kwargs['hard']
         self.kernel = nn.Softmax(dim=-1)
         self.beta = kwargs.get("beta",0.25) #0.25 is the beta used in the vq-vae paper
-        
-    ###################
-    #Probably can remove these as we are using th matrix projection now
-    # def fetch_embeddings_by_index(self,indices):
-    #     if self.normalize_embeddings:
-    #         return nn.functional.normalize(self.dictionary(indices),dim=-1)
-    #     #~else
-    #     return self.dictionary(indices)
-        
-    # def fetch_embedding_matrix(self):
-    #     if self.normalize_embeddings:
-    #         return nn.functional.normalize(self.dictionary.weight,dim=-1)
-    #     #~else
-    #     return self.dictionary.weight
-    ###################
     
     def project_matrix(self,x):
         if self.projection_method == "unit-sphere":
@@ -69,17 +54,10 @@ class VQVAEDiscreteLayer(AbstractDiscreteLayer):
         
         return indices, probs, quantized, vq_loss
 
-    def codebook_distances(self, x):
-        
-        #dictionary_expanded = self.fetch_embedding_matrix().unsqueeze(0).unsqueeze(1) # Shape: (batch, 1, vocab, dim)
+    def codebook_distances(self, x):        
         dictionary_expanded = self.dictionary.weight.unsqueeze(0).unsqueeze(1)
         x_expanded = x.unsqueeze(2)
-        # if self.normalize_embeddings:
-        #     x_expanded = nn.functional.normalize(x,dim=-1).unsqueeze(2)  # Shape: (batch, length, 1, dim)
-        # else:   
-        #     x_expanded = x.unsqueeze(2)  # Shape: (batch, length, 1, dim)
-
-        # Compute the squared differences
+        
         dist = torch.linalg.vector_norm(x_expanded - dictionary_expanded, ord=self.dist_ord, dim=-1)
         return dist
 

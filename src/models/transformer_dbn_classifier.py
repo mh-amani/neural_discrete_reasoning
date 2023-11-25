@@ -4,6 +4,8 @@ import torch
 from lightning import LightningModule
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
+from .components.transformer import TransformerDBN
+import hydra
 
 class TransformerDBNClassifier(LightningModule):
     """transformer with discrete bottleneck layer lightning module
@@ -16,20 +18,16 @@ class TransformerDBNClassifier(LightningModule):
         self,
         optimizer: torch.optim.Optimizer,
         scheduler: torch.optim.lr_scheduler,
+        **kwargs: Any,
     ) -> None:
-        """Initialize a `MNISTLitModule`.
 
-        :param net: The model to train.
-        :param optimizer: The optimizer to use for training.
-        :param scheduler: The learning rate scheduler to use for training.
-        """
         super().__init__()
 
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
-        self.save_hyperparameters(logger=False)
+        self.save_hyperparameters(logger=False, ignore=['transformer_layer', 'discrete_layer'])
 
-        self.__init_model()
+        self.nn = TransformerDBN(**self.hparams.nn)
 
         # loss function
         self.criterion = torch.nn.CrossEntropyLoss()
@@ -53,7 +51,7 @@ class TransformerDBNClassifier(LightningModule):
         :param x: A tensor of images.
         :return: A tensor of logits.
         """
-        return self.model(x)
+        return self.nn(x)
 
     def on_train_start(self) -> None:
         """Lightning hook that is called when training begins."""
@@ -169,9 +167,9 @@ class TransformerDBNClassifier(LightningModule):
 
         :return: A dict containing the configured optimizers and learning-rate schedulers to be used for training.
         """
-        optimizer = self.hparams.optimizer(params=self.trainer.model.parameters())
+        optimizer = hydra.utils.instantiate(self.hparams.optimizer)(params=self.trainer.model.parameters())
         if self.hparams.scheduler is not None:
-            scheduler = self.hparams.scheduler(optimizer=optimizer)
+            scheduler =  hydra.utils.instantiate(self.hparams.scheduler)(optimizer=optimizer)
             return {
                 "optimizer": optimizer,
                 "lr_scheduler": {

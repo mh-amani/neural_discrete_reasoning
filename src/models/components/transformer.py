@@ -1,7 +1,7 @@
 # code adapted from lucidrains/vit-pytorch/vit.py (https://github.com/lucidrains/vit-pytorch)
 import torch
 from torch import nn
-
+import hydra
 from einops import rearrange, repeat
 
 
@@ -61,10 +61,11 @@ class Attention(nn.Module):
 
 
 class TransformerLayer(nn.Module):
-    def __init__(self, dim, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, num_heads, mlp_dim, dropout = 0.):
         super().__init__()
-        self.attn = PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout))
-        self.ff = PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+        dim_head = dim // num_heads
+        self.attn = PreNorm(dim, Attention(dim, heads=num_heads, dim_head=dim_head, dropout=dropout))
+        self.ff = PreNorm(dim, FeedForward(dim, mlp_dim, dropout=dropout))
 
     def forward(self, x):
             x = self.attn(x) + x
@@ -73,9 +74,10 @@ class TransformerLayer(nn.Module):
     
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, mlp_dim, dropout = 0.):
         super().__init__()
         self.layers = nn.ModuleList([])
+        dim_head = dim // heads
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
@@ -90,33 +92,33 @@ class Transformer(nn.Module):
     
 
 class TransformerDBN(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.hparams = hparams
+        self.hparams = kwargs
         # Add embedding layer
-        self.token_embedding = nn.Embedding(self.hparams.num_embedding, embedding_dim=self.hparams.embedding_dim)
-        self.pos_embedding = nn.Parameter(torch.randn(1, seq_len + 1, dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.dropout = nn.Dropout(emb_dropout)
+        self.token_embedding = nn.Embedding(self.hparams['num_embedding'], embedding_dim=self.hparams['embedding_dim'])
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.hparams['seq_len'] + 1, self.hparams['embedding_dim']))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, self.hparams['embedding_dim']))
+        self.dropout = nn.Dropout(self.hparams['emb_dropout'])
         
         self.layers = nn.ModuleList([])
 
-        for i in range(hparams.depth):
-            transformer_layer = hydra.utils.instantiate(self.hparams.transformer_layer)
+        for i in range(self.hparams['depth']):
+            transformer_layer = hydra.utils.instantiate(self.hparams['transformer_layer'])
             self.layers.append(transformer_layer)
 
-            if self.hparams.dbn_after_each_layer is not None or i == hparams.depth - 1:
-                discrete_layer = hydra.utils.instantiate(self.hparams.discrete_layer)
-                if self.hparam.shared_embedding_dbn:
+            if self.hparams['dbn_after_each_layer'] is not None or i == self.hparams['depth'] - 1:
+                discrete_layer = hydra.utils.instantiate(self.hparams['discrete_layer'])
+                if self.hparams['shared_embedding_dbn']:
                     discrete_layer.dictionary = self.token_embedding
                 self.layers.append(discrete_layer)
         
-        self.pool = pool
+        self.pool = self.hparams['pool']
         self.to_latent = nn.Identity()
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(self.hparams.embedding_dim),
-            nn.Linear(self.hparams.embedding_dim, self.hparams.output_dim)
+            nn.LayerNorm(self.hparams['embedding_dim']),
+            nn.Linear(self.hparams['embedding_dim'], self.hparams['output_dim'])
         )
 
     def forward(self, inputs):
@@ -131,7 +133,7 @@ class TransformerDBN(nn.Module):
 
         for layer in self.layers:
             if isinstance(layer, AbstractDiscreteLayer):
-                x = layer(x, supervision=supervision)
+                indices, probs, x, vq_loss = layer(x, supervision=supervision)
             else:
                 x = layer(x) + x
 

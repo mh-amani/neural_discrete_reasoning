@@ -12,7 +12,8 @@ defaults:
 # all parameters below will be merged with parameters from default configurations set above
 # this allows you to overwrite only specified parameters
 name: "pvr"
-run_name: "${model.key}-${model.discrete_layer.key}" 
+# run_name: "${model.key}-${model.discrete_layer.key}" 
+run_name: "dbn transformer"
 
 tags: []
 
