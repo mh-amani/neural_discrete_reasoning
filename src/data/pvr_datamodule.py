@@ -238,7 +238,7 @@ class PVRDataModule(LightningDataModule):
             for i in tqdm(range(n_samples)):
                 y[i] = agg_func(X_cat[i, pointer_val[i]:pointer_val[i] + self.hparams.window_size])
 
-        return TensorDataset(X, y)
+        return TensorDataset(X, y.long())
         
 
         

@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import hydra
 from einops import rearrange, repeat
+from .discrete_layers.abstract_discrete_layer import AbstractDiscreteLayer
 
 
 class PreNorm(nn.Module):
@@ -133,7 +134,7 @@ class TransformerDBN(nn.Module):
 
         for layer in self.layers:
             if isinstance(layer, AbstractDiscreteLayer):
-                indices, probs, x, vq_loss = layer(x, supervision=supervision)
+                indices, probs, x, vq_loss = layer(x, supervision=self.hparams['supervision']) # TODO: for now I'm adding this to the config file...
             else:
                 x = layer(x) + x
 

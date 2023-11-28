@@ -28,10 +28,11 @@ nn:
   num_transformer_layers: 3
   shared_embedding_dbn: True
   num_embedding: 10
-  seq_len: 10
+  seq_len: 11 # TODO: set this automatically based on the data config file or take it form some higher level folder. 
   emb_dropout: 0.1  
   depth: 2 
   pool: 'mean' # 'mean' or 'cls'
+  supervision: False # TODO: move it below?
 
   discrete_layer: 
     _target_: src.models.components.discrete_layers.vqvae.VQVAEDiscreteLayer
