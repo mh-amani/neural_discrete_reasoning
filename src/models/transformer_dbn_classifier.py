@@ -102,7 +102,12 @@ class TransformerDBNClassifier(LightningModule):
 
     def on_train_epoch_end(self) -> None:
         "Lightning hook that is called when a training epoch ends."
-        pass
+        scheduler = self.lr_schedulers()
+        # If the selected scheduler is a ReduceLROnPlateau scheduler.
+        # scheduler.step()
+        scheduler.step(self.trainer.callback_metrics[self.hparams.monitor])
+        self.log(name=f'lr', value=scheduler._last_lr[0], sync_dist=True)
+
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
         """Perform a single validation step on a batch of data from the validation set.
@@ -174,7 +179,7 @@ class TransformerDBNClassifier(LightningModule):
                 "optimizer": optimizer,
                 "lr_scheduler": {
                     "scheduler": scheduler,
-                    "monitor": "val/loss",
+                    'monitor': self.hparams['monitor'], # "monitor": "val/loss",
                     "interval": "epoch",
                     "frequency": 1,
                 },

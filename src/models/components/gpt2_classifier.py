@@ -7,8 +7,6 @@ from .discrete_layers.abstract_discrete_layer import AbstractDiscreteLayer
 from transformers import GPT2LMHeadModel, GPT2Config
 
 
-
-
 class GPT2Classifier(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()

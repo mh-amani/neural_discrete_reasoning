@@ -11,9 +11,12 @@ optimizer:
 scheduler:
   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
   _partial_: true
-  mode: min
-  factor: 0.9
+  mode: 'min'
+  factor: 0.95
   patience: 10
+  cooldown: 0
+
+monitor: "val/loss"
 
 ####################################################
 

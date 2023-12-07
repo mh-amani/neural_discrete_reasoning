@@ -150,6 +150,7 @@ configs/local/default.yaml
 /logs/
 src/data/outputs/
 .env
+**/.DS_Store
 
 # Aim logging
 .aim
