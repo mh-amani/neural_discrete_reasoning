@@ -27,7 +27,7 @@ class TransformerDBNClassifier(LightningModule):
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False, ignore=['transformer_layer', 'discrete_layer'])
 
-        self.nn = TransformerDBN(**self.hparams.nn)
+        self.nn = hydra.utils.instantiate(self.hparams.nn,  _recursive_=False)
 
         # loss function
         self.criterion = torch.nn.CrossEntropyLoss()

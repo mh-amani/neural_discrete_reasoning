@@ -1,6 +1,6 @@
 _target_: src.models.transformer_dbn_classifier.TransformerDBNClassifier
 
-key: "transformer_dbn_classifier"
+key: "gpt2_classifier"
 
 optimizer:
   _target_: torch.optim.Adam
@@ -12,7 +12,7 @@ scheduler:
   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
   _partial_: true
   mode: min
-  factor: 0.95
+  factor: 0.9
   patience: 10
 
 ####################################################
@@ -21,7 +21,7 @@ scheduler:
 compile: False
 
 nn:
-  _target_: src.models.components.transformer.TransformerDBN
+  _target_: src.models.components.gpt2_classifier.GPT2Classifier
   embedding_dim: 256
   output_dim: ${model.nn.num_embedding}
   dbn_after_each_layer: False
@@ -33,6 +33,16 @@ nn:
   depth: 6
   pool: 'mean' # 'mean' or 'cls'
   supervision: False # TODO: move it below?
+
+
+  gpt2_config:
+    vocab_size: 10
+    n_positions: 11
+    n_embd: 256
+    n_layer: 6
+    n_head: 4
+    output_hidden_states: True
+
 
   discrete_layer: 
     _target_: src.models.components.discrete_layers.vqvae.VQVAEDiscreteLayer
@@ -46,11 +56,5 @@ nn:
     projection_method: "layer norm" # "unit-sphere" "scale" "layer norm" or "None"
     beta: 0.25
 
-  transformer_layer:
-    _target_: src.models.components.transformer.TransformerLayer
-    num_heads: 8
-    dropout: ${model.nn.emb_dropout}
-    dim: ${model.nn.embedding_dim}
-    mlp_dim: ${model.nn.embedding_dim}
-
+  
       

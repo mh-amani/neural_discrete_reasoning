@@ -105,10 +105,11 @@ class TransformerDBN(nn.Module):
         self.layers = nn.ModuleList([])
 
         for i in range(self.hparams['depth']):
-            transformer_layer = hydra.utils.instantiate(self.hparams['transformer_layer'])
+            transformer_layer = hydra.utils.instantiate(self.hparams['transformer_layer'], _recursive_=False)
             self.layers.append(transformer_layer)
 
-            if self.hparams['dbn_after_each_layer'] is not None or i == self.hparams['depth'] - 1:
+            if self.hparams['dbn_after_each_layer'] or (i == self.hparams['depth'] - 1 and self.hparams['dbn_last_layer']):
+                print("Creating a discrete bottleneck layer.")
                 discrete_layer = hydra.utils.instantiate(self.hparams['discrete_layer'])
                 if self.hparams['shared_embedding_dbn']:
                     discrete_layer.dictionary = self.token_embedding
@@ -130,13 +131,13 @@ class TransformerDBN(nn.Module):
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x)
+        # x = self.dropout(x)
 
         for layer in self.layers:
             if isinstance(layer, AbstractDiscreteLayer):
                 indices, probs, x, vq_loss = layer(x, supervision=self.hparams['supervision']) # TODO: for now I'm adding this to the config file...
             else:
-                x = layer(x) + x
+                x = layer(x)
 
         x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
 
