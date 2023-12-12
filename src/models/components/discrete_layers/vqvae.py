@@ -30,8 +30,8 @@ class VQVAEDiscreteLayer(AbstractDiscreteLayer):
         return x
     
     def discretize(self, x, **kwargs) -> dict: 
-        probs = self.kernel( - self.codebook_distances(x) / self.temperature)
         x = self.project_matrix(x)
+        probs = self.kernel( - self.codebook_distances(x) / self.temperature)
         indices = torch.argmax(probs, dim=-1)
 
         if self.hard:

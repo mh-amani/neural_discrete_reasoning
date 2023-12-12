@@ -27,9 +27,9 @@ nn:
   _target_: src.models.components.transformer.TransformerDBN
   embedding_dim: 256
   output_dim: ${model.nn.num_embedding}
-  dbn_after_each_layer: True
+  dbn_after_each_layer: False
   dbn_last_layer: True
-  shared_embedding_dbn: True
+  shared_embedding_dbn: False
   num_embedding: 10
   seq_len: 11 # TODO: set this automatically based on the data config file or take it form some higher level folder. 
   emb_dropout: 0.1  
