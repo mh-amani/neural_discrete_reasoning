@@ -74,8 +74,8 @@ class TransformerDBNClassifier(LightningModule):
             - A tensor of target labels.
         """
         x, y = batch
-        logits = self.forward(x)
-        loss = self.criterion(logits, y)
+        logits, disc_loss = self.forward(x)
+        loss = self.criterion(logits, y) + disc_loss
         preds = torch.argmax(logits, dim=1)
         return loss, preds, y
 

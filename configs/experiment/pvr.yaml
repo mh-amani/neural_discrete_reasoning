@@ -5,7 +5,7 @@
 
 defaults:
   - override /data: pvr
-  - override /model: gpt2 # transformer_dbn_classifier, gpt2
+  - override /model: transformer_dbn_classifier # transformer_dbn_classifier, gpt2
   - override /callbacks: default
   - override /trainer: default
 
@@ -28,7 +28,7 @@ trainer:
 
 model:
   optimizer:
-    lr: 0.001
+    lr: 0.00001
   
   
 data:

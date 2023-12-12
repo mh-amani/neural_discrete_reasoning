@@ -127,6 +127,7 @@ class TransformerDBN(nn.Module):
         inputs = inputs.int()
         x = self.token_embedding(inputs)
         b, n, _ = x.shape
+        bottleneck_loss = 0
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
@@ -135,14 +136,15 @@ class TransformerDBN(nn.Module):
 
         for layer in self.layers:
             if isinstance(layer, AbstractDiscreteLayer):
-                indices, probs, x, vq_loss = layer(x, supervision=self.hparams['supervision']) # TODO: for now I'm adding this to the config file...
+                indices, probs, x, disc_loss = layer(x, supervision=self.hparams['supervision']) # TODO: for now I'm adding this to the config file...
+                bottleneck_loss += disc_loss
             else:
                 x = layer(x)
 
         x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
 
         x = self.to_latent(x)
-        return self.mlp_head(x)
+        return self.mlp_head(x), bottleneck_loss
 
 
 class TokenTransformer(nn.Module):
