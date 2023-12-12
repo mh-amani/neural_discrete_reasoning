@@ -45,6 +45,8 @@ class TransformerDBNClassifier(LightningModule):
         # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
+        self.disc_loss_coeff = self.hparams.nn.loss_coeffs['disc_loss']
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Perform a forward pass through the model `self.net`.
 
@@ -75,9 +77,9 @@ class TransformerDBNClassifier(LightningModule):
         """
         x, y = batch
         logits, disc_loss = self.forward(x)
-        loss = self.criterion(logits, y) + disc_loss
+        loss = self.criterion(logits, y) + self.disc_loss_coeff * disc_loss
         preds = torch.argmax(logits, dim=1)
-        return loss, preds, y
+        return loss, disc_loss, preds, y
 
     def training_step(
         self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
@@ -89,12 +91,13 @@ class TransformerDBNClassifier(LightningModule):
         :param batch_idx: The index of the current batch.
         :return: A tensor of losses between model predictions and targets.
         """
-        loss, preds, targets = self.model_step(batch)
+        loss, disc_loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.train_loss(loss)
         self.train_acc(preds, targets)
         self.log("train/loss", self.train_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("tain/disc_loss", disc_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
 
         # return loss or backpropagation will fail
@@ -116,12 +119,13 @@ class TransformerDBNClassifier(LightningModule):
             labels.
         :param batch_idx: The index of the current batch.
         """
-        loss, preds, targets = self.model_step(batch)
+        loss, disc_loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.val_loss(loss)
         self.val_acc(preds, targets)
         self.log("val/loss", self.val_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/disc_loss", disc_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("val/acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def on_validation_epoch_end(self) -> None:
@@ -139,12 +143,13 @@ class TransformerDBNClassifier(LightningModule):
             labels.
         :param batch_idx: The index of the current batch.
         """
-        loss, preds, targets = self.model_step(batch)
+        loss, disc_loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
         self.test_loss(loss)
         self.test_acc(preds, targets)
         self.log("test/loss", self.test_loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test/disc_loss", disc_loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("test/acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def on_test_epoch_end(self) -> None:

@@ -36,6 +36,8 @@ nn:
   depth: 6
   pool: 'mean' # 'mean' or 'cls'
   supervision: False # TODO: move it below?
+  loss_coeffs:
+    disc_loss: 0.001
 
   discrete_layer: 
     _target_: src.models.components.discrete_layers.vqvae.VQVAEDiscreteLayer
