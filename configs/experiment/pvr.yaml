@@ -20,8 +20,8 @@ tags: []
 seed: 42
 
 trainer:
-  min_epochs: 2000
-  max_epochs: 2000
+  min_epochs: 200
+  max_epochs: 200
   # gradient_clip_val: 0.5 # TODO: add gradient clipping
   check_val_every_n_epoch: 1
   accelerator: "gpu"
